@@ -6,7 +6,7 @@ interface NewsCardProps {
   className?: string;
 }
 
-const NewsCard = ({ article, variant = "default" }: NewsCardProps) => {
+const NewsCard = ({ article, variant = "default", className = "" }: NewsCardProps) => {
   if (variant === "hero") {
     return (
       <article className="group relative overflow-hidden rounded-lg bg-card news-card-hover cursor-pointer">
