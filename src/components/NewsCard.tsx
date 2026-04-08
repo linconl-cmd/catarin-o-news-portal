@@ -3,9 +3,10 @@ import type { NewsArticle } from "@/data/mockNews";
 interface NewsCardProps {
   article: NewsArticle;
   variant?: "default" | "compact" | "hero";
+  className?: string;
 }
 
-const NewsCard = ({ article, variant = "default" }: NewsCardProps) => {
+const NewsCard = ({ article, variant = "default", className = "" }: NewsCardProps) => {
   if (variant === "hero") {
     return (
       <article className="group relative overflow-hidden rounded-lg bg-card news-card-hover cursor-pointer">
@@ -58,7 +59,7 @@ const NewsCard = ({ article, variant = "default" }: NewsCardProps) => {
   }
 
   return (
-    <article className="group overflow-hidden rounded-lg bg-card shadow-sm news-card-hover cursor-pointer">
+    <article className={`group overflow-hidden rounded-lg bg-card shadow-sm news-card-hover cursor-pointer flex flex-col ${className}`}>
       <div className="aspect-[16/10] overflow-hidden">
         <img
           src={article.imageUrl}

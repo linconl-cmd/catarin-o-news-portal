@@ -6,7 +6,7 @@ import { TrendingUp } from "lucide-react";
 
 const Index = () => {
   const featured = mockNews.find((n) => n.featured)!;
-  const secondary = mockNews.filter((n) => !n.featured).slice(0, 3);
+  const secondary = mockNews.filter((n) => !n.featured).slice(0, 2);
   const latest = mockNews.filter((n) => !n.featured).slice(3);
   const mostRead = [...mockNews].sort(() => 0.5 - Math.random()).slice(0, 5);
 
@@ -29,9 +29,11 @@ const Index = () => {
           <div className="lg:col-span-2">
             <NewsCard article={featured} variant="hero" />
           </div>
-          <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-4 h-full">
             {secondary.map((article) => (
-              <NewsCard key={article.id} article={article} variant="default" />
+              <div key={article.id} className="flex-1">
+                <NewsCard article={article} variant="default" className="h-full" />
+              </div>
             ))}
           </div>
         </section>
