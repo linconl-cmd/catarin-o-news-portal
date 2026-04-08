@@ -3,6 +3,7 @@ import type { NewsArticle } from "@/data/mockNews";
 interface NewsCardProps {
   article: NewsArticle;
   variant?: "default" | "compact" | "hero";
+  className?: string;
 }
 
 const NewsCard = ({ article, variant = "default" }: NewsCardProps) => {
