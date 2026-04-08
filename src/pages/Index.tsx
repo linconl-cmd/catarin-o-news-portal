@@ -25,9 +25,9 @@ const Index = () => {
 
       <main className="container mx-auto px-4 py-6">
         {/* Hero + Secondary */}
-        <section className="grid gap-6 lg:grid-cols-3">
-          <div className="lg:col-span-2">
-            <NewsCard article={featured} variant="hero" />
+        <section className="grid gap-6 lg:grid-cols-3 lg:auto-rows-[1fr]">
+          <div className="lg:col-span-2 rounded-lg border-2 border-primary overflow-hidden">
+            <NewsCard article={featured} variant="hero" className="h-full" />
           </div>
           <div className="flex flex-col gap-4 h-full">
             {secondary.map((article) => (

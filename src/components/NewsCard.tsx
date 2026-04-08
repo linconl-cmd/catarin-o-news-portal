@@ -9,8 +9,8 @@ interface NewsCardProps {
 const NewsCard = ({ article, variant = "default", className = "" }: NewsCardProps) => {
   if (variant === "hero") {
     return (
-      <article className="group relative overflow-hidden rounded-lg bg-card news-card-hover cursor-pointer">
-        <div className="relative aspect-[16/9] overflow-hidden">
+      <article className={`group relative overflow-hidden rounded-lg bg-card news-card-hover cursor-pointer h-full ${className}`}>
+        <div className="relative h-full min-h-[300px] overflow-hidden">
           <img
             src={article.imageUrl}
             alt={article.title}
