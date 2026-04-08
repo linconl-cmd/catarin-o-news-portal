@@ -6,7 +6,7 @@ import { TrendingUp } from "lucide-react";
 
 const Index = () => {
   const featured = mockNews.find((n) => n.featured)!;
-  const secondary = mockNews.filter((n) => !n.featured).slice(0, 3);
+  const secondary = mockNews.filter((n) => !n.featured).slice(0, 2);
   const latest = mockNews.filter((n) => !n.featured).slice(3);
   const mostRead = [...mockNews].sort(() => 0.5 - Math.random()).slice(0, 5);
 
