@@ -59,7 +59,7 @@ const NewsCard = ({ article, variant = "default" }: NewsCardProps) => {
   }
 
   return (
-    <article className="group overflow-hidden rounded-lg bg-card shadow-sm news-card-hover cursor-pointer">
+    <article className={`group overflow-hidden rounded-lg bg-card shadow-sm news-card-hover cursor-pointer flex flex-col ${className}`}>
       <div className="aspect-[16/10] overflow-hidden">
         <img
           src={article.imageUrl}
