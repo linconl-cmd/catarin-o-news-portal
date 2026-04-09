@@ -7,8 +7,6 @@ export type Json =
   | Json[]
 
 export type Database = {
-  // Allows to automatically instantiate createClient with right options
-  // instead of createClient<Database, { PostgrestVersion: 'XX' }>(URL, KEY)
   __InternalSupabase: {
     PostgrestVersion: "14.5"
   }
@@ -62,6 +60,255 @@ export type Database = {
         }
         Relationships: []
       }
+      categories: {
+        Row: {
+          id: string
+          name: string
+          slug: string
+          description: string | null
+          color: string | null
+          parent_id: string | null
+          sort_order: number
+          is_active: boolean
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          name: string
+          slug: string
+          description?: string | null
+          color?: string | null
+          parent_id?: string | null
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          name?: string
+          slug?: string
+          description?: string | null
+          color?: string | null
+          parent_id?: string | null
+          sort_order?: number
+          is_active?: boolean
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "categories_parent_id_fkey"
+            columns: ["parent_id"]
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      articles: {
+        Row: {
+          id: string
+          title: string
+          slug: string
+          summary: string | null
+          content: string | null
+          cover_image_url: string | null
+          category_id: string | null
+          author_id: string | null
+          status: Database["public"]["Enums"]["article_status"]
+          is_featured: boolean
+          views_count: number
+          published_at: string | null
+          scheduled_at: string | null
+          meta_title: string | null
+          meta_description: string | null
+          created_at: string
+          updated_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          slug: string
+          summary?: string | null
+          content?: string | null
+          cover_image_url?: string | null
+          category_id?: string | null
+          author_id?: string | null
+          status?: Database["public"]["Enums"]["article_status"]
+          is_featured?: boolean
+          views_count?: number
+          published_at?: string | null
+          scheduled_at?: string | null
+          meta_title?: string | null
+          meta_description?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          slug?: string
+          summary?: string | null
+          content?: string | null
+          cover_image_url?: string | null
+          category_id?: string | null
+          author_id?: string | null
+          status?: Database["public"]["Enums"]["article_status"]
+          is_featured?: boolean
+          views_count?: number
+          published_at?: string | null
+          scheduled_at?: string | null
+          meta_title?: string | null
+          meta_description?: string | null
+          created_at?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "articles_category_id_fkey"
+            columns: ["category_id"]
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      site_settings: {
+        Row: {
+          id: string
+          key: string
+          value: Json
+          updated_at: string
+          updated_by: string | null
+        }
+        Insert: {
+          id?: string
+          key: string
+          value?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Update: {
+          id?: string
+          key?: string
+          value?: Json
+          updated_at?: string
+          updated_by?: string | null
+        }
+        Relationships: []
+      }
+      navigation_menus: {
+        Row: {
+          id: string
+          label: string
+          url: string | null
+          category_id: string | null
+          parent_id: string | null
+          sort_order: number
+          is_active: boolean
+          open_in_new_tab: boolean
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          label: string
+          url?: string | null
+          category_id?: string | null
+          parent_id?: string | null
+          sort_order?: number
+          is_active?: boolean
+          open_in_new_tab?: boolean
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          label?: string
+          url?: string | null
+          category_id?: string | null
+          parent_id?: string | null
+          sort_order?: number
+          is_active?: boolean
+          open_in_new_tab?: boolean
+          created_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "navigation_menus_category_id_fkey"
+            columns: ["category_id"]
+            referencedRelation: "categories"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "navigation_menus_parent_id_fkey"
+            columns: ["parent_id"]
+            referencedRelation: "navigation_menus"
+            referencedColumns: ["id"]
+          }
+        ]
+      }
+      media: {
+        Row: {
+          id: string
+          file_name: string
+          file_url: string
+          file_type: string | null
+          file_size: number | null
+          alt_text: string | null
+          uploaded_by: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          file_name: string
+          file_url: string
+          file_type?: string | null
+          file_size?: number | null
+          alt_text?: string | null
+          uploaded_by?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          file_name?: string
+          file_url?: string
+          file_type?: string | null
+          file_size?: number | null
+          alt_text?: string | null
+          uploaded_by?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
+      print_editions: {
+        Row: {
+          id: string
+          title: string
+          edition_number: string | null
+          cover_image_url: string | null
+          pdf_url: string
+          published_at: string | null
+          created_at: string
+        }
+        Insert: {
+          id?: string
+          title: string
+          edition_number?: string | null
+          cover_image_url?: string | null
+          pdf_url: string
+          published_at?: string | null
+          created_at?: string
+        }
+        Update: {
+          id?: string
+          title?: string
+          edition_number?: string | null
+          cover_image_url?: string | null
+          pdf_url?: string
+          published_at?: string | null
+          created_at?: string
+        }
+        Relationships: []
+      }
     }
     Views: {
       [_ in never]: never
@@ -74,9 +321,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      increment_article_views: {
+        Args: {
+          article_id: string
+        }
+        Returns: undefined
+      }
     }
     Enums: {
       app_role: "master" | "tecnico" | "editorial"
+      article_status: "draft" | "published" | "archived"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -205,6 +459,7 @@ export const Constants = {
   public: {
     Enums: {
       app_role: ["master", "tecnico", "editorial"],
+      article_status: ["draft", "published", "archived"],
     },
   },
 } as const
