@@ -10,6 +10,7 @@ import {
 } from "lucide-react";
 import { NavLink } from "@/components/NavLink";
 import { useAuth } from "@/hooks/useAuth";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 import {
   Sidebar,
   SidebarContent,
@@ -28,6 +29,7 @@ const AdminSidebar = () => {
   const { hasRole, hasAnyRole, signOut, user } = useAuth();
   const { state } = useSidebar();
   const collapsed = state === "collapsed";
+  const siteSettings = useSiteSettings();
 
   const menuItems = [
     { title: "Dashboard", url: "/admin", icon: LayoutDashboard, roles: ["master", "tecnico", "editorial"] as const },
@@ -49,7 +51,17 @@ const AdminSidebar = () => {
         <SidebarGroup>
           <SidebarGroupLabel>
             {!collapsed && (
-              <span className="font-heading text-sm font-bold">O CATARINÃO</span>
+              siteSettings.logo_url ? (
+                <img
+                  src={siteSettings.logo_url}
+                  alt={siteSettings.site_name}
+                  className="h-7 object-contain"
+                />
+              ) : (
+                <span className="font-heading text-sm font-bold">
+                  {siteSettings.site_name || "O CATARINÃO"}
+                </span>
+              )
             )}
           </SidebarGroupLabel>
           <SidebarGroupContent>

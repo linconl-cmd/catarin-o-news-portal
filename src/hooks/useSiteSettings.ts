@@ -31,7 +31,10 @@ const applyFavicon = (url: string | null) => {
 
 const applyTitle = (name: string) => {
   if (typeof document === "undefined") return;
-  document.title = name;
+  const isAdmin =
+    typeof window !== "undefined" &&
+    window.location.pathname.startsWith("/admin");
+  document.title = isAdmin ? `${name} - Admin` : name;
 };
 
 const fetchSettings = async (): Promise<GeneralSettings> => {

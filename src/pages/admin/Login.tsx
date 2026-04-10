@@ -5,12 +5,14 @@ import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { toast } from "sonner";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const AdminLogin = () => {
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [loading, setLoading] = useState(false);
   const navigate = useNavigate();
+  const siteSettings = useSiteSettings();
 
   const handleLogin = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -31,7 +33,17 @@ const AdminLogin = () => {
     <div className="min-h-screen flex items-center justify-center bg-background">
       <div className="w-full max-w-md space-y-8 p-8">
         <div className="text-center">
-          <h1 className="font-heading text-3xl font-black text-primary">O CATARINÃO</h1>
+          {siteSettings.logo_url ? (
+            <img
+              src={siteSettings.logo_url}
+              alt={siteSettings.site_name}
+              className="mx-auto h-16 object-contain"
+            />
+          ) : (
+            <h1 className="font-heading text-3xl font-black text-primary">
+              {siteSettings.site_name || "O CATARINÃO"}
+            </h1>
+          )}
           <p className="mt-2 text-sm text-muted-foreground">Painel Administrativo</p>
         </div>
 

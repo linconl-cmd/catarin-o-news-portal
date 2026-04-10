@@ -3,9 +3,11 @@ import { useAuth } from "@/hooks/useAuth";
 import { SidebarProvider, SidebarTrigger } from "@/components/ui/sidebar";
 import AdminSidebar from "./AdminSidebar";
 import { Skeleton } from "@/components/ui/skeleton";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 const AdminLayout = () => {
   const { user, loading, hasAnyRole } = useAuth();
+  const siteSettings = useSiteSettings();
 
   if (loading) {
     return (
@@ -39,9 +41,23 @@ const AdminLayout = () => {
       <div className="min-h-screen flex w-full">
         <AdminSidebar />
         <div className="flex-1 flex flex-col">
-          <header className="h-14 flex items-center border-b bg-card px-4">
-            <SidebarTrigger className="mr-4" />
-            <h2 className="font-heading text-lg font-bold text-primary">Painel Administrativo</h2>
+          <header className="h-14 flex items-center border-b bg-card px-4 gap-3">
+            <SidebarTrigger className="mr-2" />
+            {siteSettings.logo_url ? (
+              <img
+                src={siteSettings.logo_url}
+                alt={siteSettings.site_name}
+                className="h-8 object-contain"
+              />
+            ) : (
+              <span className="font-heading text-base font-black text-primary">
+                {siteSettings.site_name || "O CATARINÃO"}
+              </span>
+            )}
+            <div className="h-6 w-px bg-border" />
+            <h2 className="font-heading text-sm font-semibold text-muted-foreground">
+              Painel Administrativo
+            </h2>
           </header>
           <main className="flex-1 p-6 bg-background overflow-auto">
             <Outlet />
