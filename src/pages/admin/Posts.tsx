@@ -59,7 +59,7 @@ interface Article {
   published_at: string | null;
   created_at: string;
   categories?: { name: string; color: string | null } | null;
-  profiles?: { full_name: string | null } | null;
+  author_name?: string | null;
 }
 
 interface Category {
@@ -102,15 +102,38 @@ const AdminPosts = () => {
     const { data, error } = await supabase
       .from("articles")
       .select(
-        "id, title, slug, summary, cover_image_url, category_id, author_id, status, is_featured, views_count, published_at, created_at, categories(name, color), profiles!articles_author_id_fkey(full_name)"
+        "id, title, slug, summary, cover_image_url, category_id, author_id, status, is_featured, views_count, published_at, created_at, categories(name, color)"
       )
       .order("created_at", { ascending: false });
 
     if (error) {
       toast.error("Erro ao carregar artigos.");
-    } else {
-      setArticles((data as unknown as Article[]) ?? []);
+      setLoading(false);
+      return;
     }
+
+    // Fetch author names from profiles
+    const articles = (data as unknown as Article[]) ?? [];
+    const authorIds = [...new Set(articles.map((a) => a.author_id).filter(Boolean))];
+
+    if (authorIds.length > 0) {
+      const { data: profiles } = await supabase
+        .from("profiles")
+        .select("user_id, full_name")
+        .in("user_id", authorIds as string[]);
+
+      const profileMap = new Map(
+        (profiles ?? []).map((p) => [p.user_id, p.full_name])
+      );
+
+      articles.forEach((a) => {
+        if (a.author_id) {
+          a.author_name = profileMap.get(a.author_id) ?? null;
+        }
+      });
+    }
+
+    setArticles(articles);
     setLoading(false);
   };
 
@@ -352,8 +375,8 @@ const AdminPosts = () => {
                         </div>
                         <div className="text-xs text-muted-foreground">
                           /{article.slug}
-                          {article.profiles?.full_name && (
-                            <> · {article.profiles.full_name}</>
+                          {article.author_name && (
+                            <> · {article.author_name}</>
                           )}
                         </div>
                       </div>
