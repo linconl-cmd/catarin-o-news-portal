@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef } from "react";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import { Button } from "@/components/ui/button";
@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, Save, Globe, Share2, FileText, Search } from "lucide-react";
+import { Loader2, Save, Globe, Share2, FileText, Search, Upload, X } from "lucide-react";
 
 interface Settings {
   general: {
@@ -52,6 +52,48 @@ const AdminSiteSettings = () => {
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
+  const [uploading, setUploading] = useState<"logo" | "favicon" | null>(null);
+  const logoInputRef = useRef<HTMLInputElement>(null);
+  const faviconInputRef = useRef<HTMLInputElement>(null);
+
+  const uploadImage = async (
+    file: File,
+    field: "logo_url" | "favicon_url",
+    kind: "logo" | "favicon"
+  ) => {
+    // Validate size (2MB max for logo/favicon)
+    const maxSize = 2 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error("Arquivo muito grande. Máx 2MB.");
+      return;
+    }
+    // Validate type
+    const allowed = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/svg+xml", "image/x-icon", "image/vnd.microsoft.icon"];
+    if (!allowed.includes(file.type)) {
+      toast.error("Formato inválido. Use PNG, JPG, WEBP, SVG ou ICO.");
+      return;
+    }
+
+    setUploading(kind);
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const fileName = `branding/${kind}-${Date.now()}.${ext}`;
+
+      const { error: upErr } = await supabase.storage
+        .from("media")
+        .upload(fileName, file, { upsert: true, cacheControl: "3600" });
+
+      if (upErr) throw upErr;
+
+      const { data: pub } = supabase.storage.from("media").getPublicUrl(fileName);
+      updateField("general", field, pub.publicUrl);
+      toast.success(`${kind === "logo" ? "Logo" : "Favicon"} enviado!`);
+    } catch (err: any) {
+      toast.error(`Erro no upload: ${err.message}`);
+    } finally {
+      setUploading(null);
+    }
+  };
 
   useEffect(() => {
     const fetchSettings = async () => {
@@ -168,32 +210,164 @@ const AdminSiteSettings = () => {
                 </div>
               </div>
               <div className="grid gap-4 sm:grid-cols-2">
+                {/* LOGO */}
                 <div className="space-y-2">
-                  <Label>URL do Logo</Label>
-                  <Input
-                    placeholder="https://..."
-                    value={settings.general.logo_url ?? ""}
-                    onChange={(e) =>
-                      updateField("general", "logo_url", e.target.value || null)
-                    }
-                  />
-                  {settings.general.logo_url && (
-                    <img
-                      src={settings.general.logo_url}
-                      alt="Logo"
-                      className="h-12 mt-2 object-contain"
+                  <Label>Logo</Label>
+                  <div className="rounded-lg border border-dashed p-4 space-y-3">
+                    {settings.general.logo_url ? (
+                      <div className="relative group">
+                        <div className="flex items-center justify-center rounded-md bg-muted/30 p-4 min-h-[80px]">
+                          <img
+                            src={settings.general.logo_url}
+                            alt="Logo"
+                            className="h-16 object-contain"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="destructive"
+                          className="absolute top-1 right-1 h-7 w-7"
+                          onClick={() =>
+                            updateField("general", "logo_url", null)
+                          }
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center rounded-md bg-muted/30 p-8 text-xs text-muted-foreground">
+                        Nenhum logo enviado
+                      </div>
+                    )}
+
+                    <input
+                      ref={logoInputRef}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/svg+xml"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) uploadImage(f, "logo_url", "logo");
+                        e.target.value = "";
+                      }}
                     />
-                  )}
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => logoInputRef.current?.click()}
+                      disabled={uploading === "logo"}
+                    >
+                      {uploading === "logo" ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Upload className="mr-2 h-4 w-4" />
+                      )}
+                      {settings.general.logo_url ? "Trocar Logo" : "Enviar Logo"}
+                    </Button>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">
+                        Ou cole uma URL
+                      </Label>
+                      <Input
+                        placeholder="https://..."
+                        value={settings.general.logo_url ?? ""}
+                        onChange={(e) =>
+                          updateField(
+                            "general",
+                            "logo_url",
+                            e.target.value || null
+                          )
+                        }
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      PNG, JPG, WEBP ou SVG. Máx 2MB.
+                    </p>
+                  </div>
                 </div>
+
+                {/* FAVICON */}
                 <div className="space-y-2">
-                  <Label>URL do Favicon</Label>
-                  <Input
-                    placeholder="https://..."
-                    value={settings.general.favicon_url ?? ""}
-                    onChange={(e) =>
-                      updateField("general", "favicon_url", e.target.value || null)
-                    }
-                  />
+                  <Label>Favicon</Label>
+                  <div className="rounded-lg border border-dashed p-4 space-y-3">
+                    {settings.general.favicon_url ? (
+                      <div className="relative group">
+                        <div className="flex items-center justify-center rounded-md bg-muted/30 p-4 min-h-[80px]">
+                          <img
+                            src={settings.general.favicon_url}
+                            alt="Favicon"
+                            className="h-12 w-12 object-contain"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="destructive"
+                          className="absolute top-1 right-1 h-7 w-7"
+                          onClick={() =>
+                            updateField("general", "favicon_url", null)
+                          }
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center rounded-md bg-muted/30 p-8 text-xs text-muted-foreground">
+                        Nenhum favicon enviado
+                      </div>
+                    )}
+
+                    <input
+                      ref={faviconInputRef}
+                      type="file"
+                      accept="image/png,image/x-icon,image/vnd.microsoft.icon,image/svg+xml"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) uploadImage(f, "favicon_url", "favicon");
+                        e.target.value = "";
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => faviconInputRef.current?.click()}
+                      disabled={uploading === "favicon"}
+                    >
+                      {uploading === "favicon" ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Upload className="mr-2 h-4 w-4" />
+                      )}
+                      {settings.general.favicon_url
+                        ? "Trocar Favicon"
+                        : "Enviar Favicon"}
+                    </Button>
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">
+                        Ou cole uma URL
+                      </Label>
+                      <Input
+                        placeholder="https://..."
+                        value={settings.general.favicon_url ?? ""}
+                        onChange={(e) =>
+                          updateField(
+                            "general",
+                            "favicon_url",
+                            e.target.value || null
+                          )
+                        }
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      ICO, PNG ou SVG. Recomendado 32x32 ou 64x64.
+                    </p>
+                  </div>
                 </div>
               </div>
               <Button

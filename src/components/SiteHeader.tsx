@@ -13,6 +13,7 @@ import {
 import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
+import { useSiteSettings } from "@/hooks/useSiteSettings";
 
 interface Category {
   id: string;
@@ -29,6 +30,7 @@ const SiteHeader = () => {
   const [openDropdown, setOpenDropdown] = useState<string | null>(null);
   const [openMobileSub, setOpenMobileSub] = useState<string | null>(null);
   const dropdownTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const siteSettings = useSiteSettings();
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -103,11 +105,19 @@ const SiteHeader = () => {
         <div className="container mx-auto flex items-center justify-between px-4 py-4">
           <div className="flex-1" />
           <Link to="/" className="text-center">
-            <h1 className="font-heading text-3xl font-black tracking-tight text-primary md:text-4xl">
-              O CATARIN&Atilde;O
-            </h1>
+            {siteSettings.logo_url ? (
+              <img
+                src={siteSettings.logo_url}
+                alt={siteSettings.site_name}
+                className="mx-auto h-14 object-contain md:h-16"
+              />
+            ) : (
+              <h1 className="font-heading text-3xl font-black tracking-tight text-primary md:text-4xl">
+                {siteSettings.site_name || "O CATARINÃO"}
+              </h1>
+            )}
             <p className="font-body text-xs tracking-widest text-muted-foreground">
-              JORNALISMO DE SANTA CATARINA
+              {siteSettings.site_subtitle || "JORNALISMO DE SANTA CATARINA"}
             </p>
           </Link>
           <div className="flex flex-1 items-center justify-end gap-2">
