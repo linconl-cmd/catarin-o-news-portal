@@ -8,7 +8,8 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, Save, Globe, Share2, FileText, Search, Upload, X } from "lucide-react";
+import { Loader2, Save, Globe, Share2, FileText, Search, Upload, X, Megaphone } from "lucide-react";
+import { Switch } from "@/components/ui/switch";
 
 interface Settings {
   general: {
@@ -33,6 +34,15 @@ interface Settings {
     default_meta_title: string;
     default_meta_description: string;
   };
+  ads: {
+    enabled: boolean;
+    header_banner_url: string | null;
+    header_link: string;
+    sidebar_banner_url: string | null;
+    sidebar_link: string;
+    inline_banner_url: string | null;
+    inline_link: string;
+  };
 }
 
 const DEFAULT_SETTINGS: Settings = {
@@ -45,16 +55,61 @@ const DEFAULT_SETTINGS: Settings = {
   social: { facebook: "", instagram: "", youtube: "", twitter: "", whatsapp: "" },
   footer: { about_text: "", show_categories: true, show_social: true },
   seo: { default_meta_title: "", default_meta_description: "" },
+  ads: {
+    enabled: false,
+    header_banner_url: null,
+    header_link: "",
+    sidebar_banner_url: null,
+    sidebar_link: "",
+    inline_banner_url: null,
+    inline_link: "",
+  },
 };
+
+type AdSlot = "header" | "sidebar" | "inline";
 
 const AdminSiteSettings = () => {
   const { user } = useAuth();
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
-  const [uploading, setUploading] = useState<"logo" | "favicon" | null>(null);
+  const [uploading, setUploading] = useState<string | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const faviconInputRef = useRef<HTMLInputElement>(null);
+  const adInputRefs = {
+    header: useRef<HTMLInputElement>(null),
+    sidebar: useRef<HTMLInputElement>(null),
+    inline: useRef<HTMLInputElement>(null),
+  };
+
+  const uploadAdBanner = async (file: File, slot: AdSlot) => {
+    const maxSize = 5 * 1024 * 1024;
+    if (file.size > maxSize) {
+      toast.error("Arquivo muito grande. Máx 5MB.");
+      return;
+    }
+    const allowed = ["image/png", "image/jpeg", "image/jpg", "image/webp", "image/gif"];
+    if (!allowed.includes(file.type)) {
+      toast.error("Formato inválido. Use PNG, JPG, WEBP ou GIF.");
+      return;
+    }
+    setUploading(`ad-${slot}`);
+    try {
+      const ext = file.name.split(".").pop() || "png";
+      const fileName = `ads/${slot}-${Date.now()}.${ext}`;
+      const { error: upErr } = await supabase.storage
+        .from("media")
+        .upload(fileName, file, { upsert: true, cacheControl: "3600" });
+      if (upErr) throw upErr;
+      const { data: pub } = supabase.storage.from("media").getPublicUrl(fileName);
+      updateField("ads", `${slot}_banner_url` as any, pub.publicUrl);
+      toast.success("Banner enviado!");
+    } catch (err: any) {
+      toast.error(`Erro no upload: ${err.message}`);
+    } finally {
+      setUploading(null);
+    }
+  };
 
   const uploadImage = async (
     file: File,
@@ -121,11 +176,14 @@ const AdminSiteSettings = () => {
     setSaving(section);
     const { error } = await supabase
       .from("site_settings")
-      .update({
-        value: settings[section] as any,
-        updated_by: user?.id ?? null,
-      })
-      .eq("key", section);
+      .upsert(
+        {
+          key: section,
+          value: settings[section] as any,
+          updated_by: user?.id ?? null,
+        },
+        { onConflict: "key" }
+      );
 
     if (error) {
       toast.error(`Erro ao salvar: ${error.message}`);
@@ -176,6 +234,9 @@ const AdminSiteSettings = () => {
           </TabsTrigger>
           <TabsTrigger value="seo" className="gap-2">
             <Search className="h-4 w-4" /> SEO
+          </TabsTrigger>
+          <TabsTrigger value="ads" className="gap-2">
+            <Megaphone className="h-4 w-4" /> Anúncios
           </TabsTrigger>
         </TabsList>
 
@@ -551,6 +612,154 @@ const AdminSiteSettings = () => {
                 disabled={saving === "seo"}
               >
                 {saving === "seo" ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                Salvar
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* ADS */}
+        <TabsContent value="ads">
+          <Card>
+            <CardHeader>
+              <CardTitle>Espaços Publicitários</CardTitle>
+              <CardDescription>
+                Ative, desative e gerencie os banners publicitários do site.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-6">
+              {/* Master toggle */}
+              <div className="flex items-center justify-between rounded-lg border p-4">
+                <div>
+                  <p className="text-sm font-medium">Exibir anúncios</p>
+                  <p className="text-xs text-muted-foreground">
+                    Ativa ou desativa todos os espaços publicitários do site.
+                  </p>
+                </div>
+                <Switch
+                  checked={settings.ads.enabled}
+                  onCheckedChange={(v) => updateField("ads", "enabled", v)}
+                />
+              </div>
+
+              {/* Ad slots */}
+              {(
+                [
+                  {
+                    slot: "header" as AdSlot,
+                    label: "Banner do Topo (Header)",
+                    description: "Exibido no topo da home. Recomendado: 728x90 ou 970x250.",
+                    field: "header_banner_url" as const,
+                    linkField: "header_link" as const,
+                  },
+                  {
+                    slot: "sidebar" as AdSlot,
+                    label: "Banner Lateral (Sidebar)",
+                    description: "Exibido na coluna lateral. Recomendado: 300x250 ou 300x600.",
+                    field: "sidebar_banner_url" as const,
+                    linkField: "sidebar_link" as const,
+                  },
+                  {
+                    slot: "inline" as AdSlot,
+                    label: "Banner Interno (Dentro de artigos)",
+                    description: "Exibido entre parágrafos. Recomendado: 728x90 ou 468x60.",
+                    field: "inline_banner_url" as const,
+                    linkField: "inline_link" as const,
+                  },
+                ]
+              ).map(({ slot, label, description, field, linkField }) => {
+                const url = settings.ads[field];
+                const isUploading = uploading === `ad-${slot}`;
+                return (
+                  <div
+                    key={slot}
+                    className="rounded-lg border border-dashed p-4 space-y-3"
+                  >
+                    <div>
+                      <Label className="text-sm font-medium">{label}</Label>
+                      <p className="text-xs text-muted-foreground">{description}</p>
+                    </div>
+
+                    {url ? (
+                      <div className="relative">
+                        <div className="flex items-center justify-center rounded-md bg-muted/30 p-4 min-h-[100px]">
+                          <img
+                            src={url}
+                            alt={label}
+                            className="max-h-32 object-contain"
+                          />
+                        </div>
+                        <Button
+                          type="button"
+                          size="icon"
+                          variant="destructive"
+                          className="absolute top-1 right-1 h-7 w-7"
+                          onClick={() => updateField("ads", field, null)}
+                        >
+                          <X className="h-4 w-4" />
+                        </Button>
+                      </div>
+                    ) : (
+                      <div className="flex items-center justify-center rounded-md bg-muted/30 p-8 text-xs text-muted-foreground">
+                        Nenhum banner enviado
+                      </div>
+                    )}
+
+                    <input
+                      ref={adInputRefs[slot]}
+                      type="file"
+                      accept="image/png,image/jpeg,image/webp,image/gif"
+                      className="hidden"
+                      onChange={(e) => {
+                        const f = e.target.files?.[0];
+                        if (f) uploadAdBanner(f, slot);
+                        e.target.value = "";
+                      }}
+                    />
+                    <Button
+                      type="button"
+                      variant="outline"
+                      size="sm"
+                      className="w-full"
+                      onClick={() => adInputRefs[slot].current?.click()}
+                      disabled={isUploading}
+                    >
+                      {isUploading ? (
+                        <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                      ) : (
+                        <Upload className="mr-2 h-4 w-4" />
+                      )}
+                      {url ? "Trocar Banner" : "Enviar Banner"}
+                    </Button>
+
+                    <div className="space-y-1">
+                      <Label className="text-xs text-muted-foreground">
+                        Link ao clicar (opcional)
+                      </Label>
+                      <Input
+                        placeholder="https://anunciante.com.br"
+                        value={settings.ads[linkField]}
+                        onChange={(e) =>
+                          updateField("ads", linkField, e.target.value)
+                        }
+                      />
+                    </div>
+                    <p className="text-xs text-muted-foreground">
+                      PNG, JPG, WEBP ou GIF. Máx 5MB.
+                    </p>
+                  </div>
+                );
+              })}
+
+              <Button
+                onClick={() => saveSection("ads")}
+                disabled={saving === "ads"}
+              >
+                {saving === "ads" ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <Save className="mr-2 h-4 w-4" />

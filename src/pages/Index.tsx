@@ -3,6 +3,7 @@ import { supabase } from "@/integrations/supabase/client";
 import SiteHeader from "@/components/SiteHeader";
 import SiteFooter from "@/components/SiteFooter";
 import NewsCard, { type PublicArticle } from "@/components/NewsCard";
+import AdBanner from "@/components/AdBanner";
 import { TrendingUp, Loader2 } from "lucide-react";
 
 const Index = () => {
@@ -80,14 +81,8 @@ const Index = () => {
     <div className="min-h-screen bg-background">
       <SiteHeader />
 
-      {/* Ad banner placeholder */}
-      <div className="bg-muted">
-        <div className="container mx-auto px-4 py-2 text-center">
-          <div className="inline-block rounded bg-border px-8 py-3 text-xs text-muted-foreground">
-            ESPAÇO PUBLICITÁRIO
-          </div>
-        </div>
-      </div>
+      {/* Header ad banner (only renders when ads are enabled) */}
+      <AdBanner slot="header" />
 
       <main className="container mx-auto px-4 py-6">
         {loading ? (
