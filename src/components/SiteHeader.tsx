@@ -103,7 +103,16 @@ const SiteHeader = () => {
       {/* Logo area */}
       <div className="bg-card border-b border-border">
         <div className="container mx-auto flex items-center justify-between px-4 py-4">
-          <div className="flex-1" />
+          <div className="flex flex-1 items-center justify-start">
+            <Button
+              variant="ghost"
+              size="icon"
+              className="text-foreground md:hidden"
+              onClick={() => setMenuOpen(!menuOpen)}
+            >
+              {menuOpen ? <X size={20} /> : <Menu size={20} />}
+            </Button>
+          </div>
           <Link to="/" className="text-center">
             {siteSettings.logo_url ? (
               <img
@@ -116,9 +125,6 @@ const SiteHeader = () => {
                 {siteSettings.site_name || "O CATARINÃO"}
               </h1>
             )}
-            <p className="font-body text-xs tracking-widest text-muted-foreground">
-              {siteSettings.site_subtitle || "JORNALISMO DE SANTA CATARINA"}
-            </p>
           </Link>
           <div className="flex flex-1 items-center justify-end gap-2">
             <Button
@@ -128,14 +134,6 @@ const SiteHeader = () => {
               className="text-foreground"
             >
               <Search size={20} />
-            </Button>
-            <Button
-              variant="ghost"
-              size="icon"
-              className="text-foreground md:hidden"
-              onClick={() => setMenuOpen(!menuOpen)}
-            >
-              {menuOpen ? <X size={20} /> : <Menu size={20} />}
             </Button>
           </div>
         </div>
