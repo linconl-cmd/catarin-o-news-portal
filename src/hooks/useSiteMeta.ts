@@ -21,10 +21,16 @@ export function useSiteMeta() {
 
       if (error || !data) return;
 
+      // Update standard meta description
+      setMetaTag('meta[name="description"]', "content", data.og_description);
+
+      // Update Open Graph tags
       setMetaTag('meta[property="og:title"]', "content", data.og_title);
       setMetaTag('meta[property="og:description"]', "content", data.og_description);
       setMetaTag('meta[property="og:image"]', "content", data.og_image_url || "");
       setMetaTag('meta[property="og:url"]', "content", data.og_url);
+
+      // Update Twitter Card tags
       setMetaTag('meta[name="twitter:card"]', "content", data.twitter_card);
       setMetaTag('meta[name="twitter:title"]', "content", data.og_title);
       setMetaTag('meta[name="twitter:description"]', "content", data.og_description);
