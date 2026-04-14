@@ -17,14 +17,21 @@ import AdminPrintEditions from "./pages/admin/PrintEditions.tsx";
 import AdminAnalytics from "./pages/admin/Analytics.tsx";
 import AdminUsersManagement from "./pages/admin/UsersManagement.tsx";
 import AdminSiteSettings from "./pages/admin/SiteSettings.tsx";
+import { useSiteMeta } from "@/hooks/useSiteMeta";
 
 const queryClient = new QueryClient();
+
+const SiteMetaLoader = () => {
+  useSiteMeta();
+  return null;
+};
 
 const App = () => (
   <QueryClientProvider client={queryClient}>
     <TooltipProvider>
       <Toaster />
       <Sonner />
+      <SiteMetaLoader />
       <BrowserRouter>
         <AuthProvider>
           <Routes>

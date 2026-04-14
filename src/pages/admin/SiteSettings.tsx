@@ -8,7 +8,7 @@ import { Textarea } from "@/components/ui/textarea";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { toast } from "sonner";
-import { Loader2, Save, Globe, Share2, FileText, Search, Upload, X, Megaphone } from "lucide-react";
+import { Loader2, Save, Globe, Share2, FileText, Search, Upload, X, Megaphone, ExternalLink } from "lucide-react";
 import { Switch } from "@/components/ui/switch";
 
 interface Settings {
@@ -66,13 +66,33 @@ const DEFAULT_SETTINGS: Settings = {
   },
 };
 
+interface MetaSettings {
+  og_title: string;
+  og_description: string;
+  og_image_url: string;
+  og_url: string;
+  twitter_card: string;
+}
+
+const DEFAULT_META: MetaSettings = {
+  og_title: "O Catarinão - Notícias de Santa Catarina",
+  og_description: "Portal de notícias de Santa Catarina.",
+  og_image_url: "",
+  og_url: "https://ocatarinao.vercel.app",
+  twitter_card: "summary_large_image",
+};
+
+const META_ROW_ID = "00000000-0000-0000-0000-000000000001";
+
 type AdSlot = "header" | "sidebar" | "inline";
 
 const AdminSiteSettings = () => {
   const { user } = useAuth();
   const [settings, setSettings] = useState<Settings>(DEFAULT_SETTINGS);
+  const [metaSettings, setMetaSettings] = useState<MetaSettings>(DEFAULT_META);
   const [loading, setLoading] = useState(true);
   const [saving, setSaving] = useState<string | null>(null);
+  const [savingMeta, setSavingMeta] = useState(false);
   const [uploading, setUploading] = useState<string | null>(null);
   const logoInputRef = useRef<HTMLInputElement>(null);
   const faviconInputRef = useRef<HTMLInputElement>(null);
@@ -167,10 +187,45 @@ const AdminSiteSettings = () => {
         });
         setSettings(mapped);
       }
+      // Fetch meta settings from separate table
+      const { data: metaData } = await supabase
+        .from("site_meta_settings")
+        .select("og_title, og_description, og_image_url, og_url, twitter_card")
+        .eq("id", META_ROW_ID)
+        .single();
+
+      if (metaData) {
+        setMetaSettings({
+          og_title: metaData.og_title ?? DEFAULT_META.og_title,
+          og_description: metaData.og_description ?? DEFAULT_META.og_description,
+          og_image_url: metaData.og_image_url ?? "",
+          og_url: metaData.og_url ?? DEFAULT_META.og_url,
+          twitter_card: metaData.twitter_card ?? DEFAULT_META.twitter_card,
+        });
+      }
+
       setLoading(false);
     };
     fetchSettings();
   }, []);
+
+  const saveMetaSettings = async () => {
+    setSavingMeta(true);
+    const { error } = await supabase
+      .from("site_meta_settings")
+      .update({
+        ...metaSettings,
+        updated_at: new Date().toISOString(),
+      })
+      .eq("id", META_ROW_ID);
+
+    if (error) {
+      toast.error(`Erro ao salvar: ${error.message}`);
+    } else {
+      toast.success("Configurações de SEO/compartilhamento salvas!");
+    }
+    setSavingMeta(false);
+  };
 
   const saveSection = async (section: keyof Settings) => {
     setSaving(section);
@@ -237,6 +292,9 @@ const AdminSiteSettings = () => {
           </TabsTrigger>
           <TabsTrigger value="ads" className="gap-2">
             <Megaphone className="h-4 w-4" /> Anúncios
+          </TabsTrigger>
+          <TabsTrigger value="opengraph" className="gap-2">
+            <ExternalLink className="h-4 w-4" /> SEO e Compartilhamento
           </TabsTrigger>
         </TabsList>
 
@@ -612,6 +670,102 @@ const AdminSiteSettings = () => {
                 disabled={saving === "seo"}
               >
                 {saving === "seo" ? (
+                  <Loader2 className="mr-2 h-4 w-4 animate-spin" />
+                ) : (
+                  <Save className="mr-2 h-4 w-4" />
+                )}
+                Salvar
+              </Button>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        {/* OPEN GRAPH / SEO E COMPARTILHAMENTO */}
+        <TabsContent value="opengraph">
+          <Card>
+            <CardHeader>
+              <CardTitle>SEO e Compartilhamento</CardTitle>
+              <CardDescription>
+                Essas informações aparecem quando o link do portal é compartilhado no WhatsApp, redes sociais etc.
+              </CardDescription>
+            </CardHeader>
+            <CardContent className="space-y-4">
+              <div className="space-y-2">
+                <Label>Título do site (og:title)</Label>
+                <Input
+                  placeholder="O Catarinão - Notícias de Santa Catarina"
+                  value={metaSettings.og_title}
+                  onChange={(e) =>
+                    setMetaSettings((prev) => ({ ...prev, og_title: e.target.value }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>Descrição (og:description)</Label>
+                <Textarea
+                  rows={3}
+                  placeholder="Portal de notícias de Santa Catarina."
+                  value={metaSettings.og_description}
+                  onChange={(e) =>
+                    setMetaSettings((prev) => ({ ...prev, og_description: e.target.value }))
+                  }
+                />
+              </div>
+              <div className="space-y-2">
+                <Label>URL da imagem de compartilhamento (og:image)</Label>
+                <Input
+                  placeholder="https://..."
+                  value={metaSettings.og_image_url}
+                  onChange={(e) =>
+                    setMetaSettings((prev) => ({ ...prev, og_image_url: e.target.value }))
+                  }
+                />
+                <p className="text-xs text-muted-foreground">
+                  Recomendado: 1200x630 pixels. Aparece como miniatura ao compartilhar o link.
+                </p>
+              </div>
+              <div className="space-y-2">
+                <Label>URL do site (og:url)</Label>
+                <Input
+                  placeholder="https://ocatarinao.vercel.app"
+                  value={metaSettings.og_url}
+                  onChange={(e) =>
+                    setMetaSettings((prev) => ({ ...prev, og_url: e.target.value }))
+                  }
+                />
+              </div>
+
+              {/* Preview */}
+              <div className="rounded-lg border p-4 space-y-2">
+                <p className="text-xs font-medium text-muted-foreground">
+                  Preview de compartilhamento
+                </p>
+                <div className="rounded-md border overflow-hidden">
+                  {metaSettings.og_image_url && (
+                    <div className="bg-muted/30 flex items-center justify-center h-40">
+                      <img
+                        src={metaSettings.og_image_url}
+                        alt="OG Preview"
+                        className="h-full w-full object-cover"
+                      />
+                    </div>
+                  )}
+                  <div className="p-3 space-y-1">
+                    <p className="text-xs text-muted-foreground uppercase">
+                      {metaSettings.og_url.replace(/^https?:\/\//, "").replace(/\/$/, "")}
+                    </p>
+                    <p className="text-sm font-semibold line-clamp-1">
+                      {metaSettings.og_title || "Título do site"}
+                    </p>
+                    <p className="text-xs text-muted-foreground line-clamp-2">
+                      {metaSettings.og_description || "Descrição do site..."}
+                    </p>
+                  </div>
+                </div>
+              </div>
+
+              <Button onClick={saveMetaSettings} disabled={savingMeta}>
+                {savingMeta ? (
                   <Loader2 className="mr-2 h-4 w-4 animate-spin" />
                 ) : (
                   <Save className="mr-2 h-4 w-4" />
