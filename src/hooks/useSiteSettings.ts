@@ -15,8 +15,26 @@ const DEFAULT_GENERAL: GeneralSettings = {
   favicon_url: null,
 };
 
+const STORAGE_KEY = "site_settings_general";
+
 let cached: GeneralSettings | null = null;
 let listeners: Array<(s: GeneralSettings) => void> = [];
+
+// Try to restore from localStorage immediately (sync, before any render)
+function getInitialSettings(): GeneralSettings {
+  if (cached) return cached;
+  try {
+    const stored = localStorage.getItem(STORAGE_KEY);
+    if (stored) {
+      const parsed = JSON.parse(stored) as GeneralSettings;
+      cached = parsed;
+      return parsed;
+    }
+  } catch {
+    // ignore
+  }
+  return DEFAULT_GENERAL;
+}
 
 const applyFavicon = (url: string | null) => {
   if (typeof document === "undefined") return;
@@ -26,7 +44,9 @@ const applyFavicon = (url: string | null) => {
     link.rel = "icon";
     document.head.appendChild(link);
   }
-  if (url) link.href = url;
+  if (url) {
+    link.href = url;
+  }
 };
 
 const applyTitle = (name: string) => {
@@ -35,6 +55,14 @@ const applyTitle = (name: string) => {
     typeof window !== "undefined" &&
     window.location.pathname.startsWith("/admin");
   document.title = isAdmin ? `${name} - Admin` : name;
+};
+
+const persistToStorage = (s: GeneralSettings) => {
+  try {
+    localStorage.setItem(STORAGE_KEY, JSON.stringify(s));
+  } catch {
+    // ignore quota errors
+  }
 };
 
 const fetchSettings = async (): Promise<GeneralSettings> => {
@@ -47,6 +75,12 @@ const fetchSettings = async (): Promise<GeneralSettings> => {
   if (error || !data) return DEFAULT_GENERAL;
   return { ...DEFAULT_GENERAL, ...((data.value as any) ?? {}) };
 };
+
+// Apply cached settings immediately on module load (before React renders)
+const initial = getInitialSettings();
+if (initial.favicon_url) {
+  applyFavicon(initial.favicon_url);
+}
 
 export const useSiteSettings = () => {
   const [settings, setSettings] = useState<GeneralSettings>(
@@ -61,17 +95,20 @@ export const useSiteSettings = () => {
     };
     listeners.push(onUpdate);
 
-    if (!cached) {
-      fetchSettings().then((s) => {
-        cached = s;
-        applyFavicon(s.favicon_url);
-        applyTitle(s.site_name);
-        listeners.forEach((l) => l(s));
-      });
-    } else {
+    // Apply cached values right away (in case module-level didn't fire yet)
+    if (cached) {
       applyFavicon(cached.favicon_url);
       applyTitle(cached.site_name);
     }
+
+    // Always fetch fresh data from Supabase to stay in sync
+    fetchSettings().then((s) => {
+      cached = s;
+      persistToStorage(s);
+      applyFavicon(s.favicon_url);
+      applyTitle(s.site_name);
+      listeners.forEach((l) => l(s));
+    });
 
     return () => {
       mounted = false;
