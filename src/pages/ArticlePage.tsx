@@ -86,7 +86,8 @@ const ArticlePage = () => {
       });
 
       // Update page title
-      document.title = `${data.meta_title || data.title} | O Catarinão`;
+      const storedName = (() => { try { const s = localStorage.getItem("site_settings_general"); return s ? JSON.parse(s).site_name : null; } catch { return null; } })();
+      document.title = `${data.meta_title || data.title} | ${storedName || "O Catarinão"}`;
 
       // Fetch related articles (same category)
       if (data.category_id) {

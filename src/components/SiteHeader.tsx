@@ -7,6 +7,7 @@ import {
   Facebook,
   Instagram,
   Youtube,
+  Twitter,
   ChevronDown,
   ChevronRight,
 } from "lucide-react";
@@ -14,6 +15,7 @@ import { Input } from "@/components/ui/input";
 import { Button } from "@/components/ui/button";
 import { supabase } from "@/integrations/supabase/client";
 import { useSiteSettings } from "@/hooks/useSiteSettings";
+import { useAllSiteSettings } from "@/hooks/useAllSiteSettings";
 
 interface Category {
   id: string;
@@ -31,6 +33,7 @@ const SiteHeader = () => {
   const [openMobileSub, setOpenMobileSub] = useState<string | null>(null);
   const dropdownTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const siteSettings = useSiteSettings();
+  const { social } = useAllSiteSettings();
 
   useEffect(() => {
     const fetchCategories = async () => {
@@ -66,6 +69,13 @@ const SiteHeader = () => {
     year: "numeric",
   });
 
+  const socialLinks = [
+    { url: social.facebook, label: "Facebook", icon: Facebook },
+    { url: social.instagram, label: "Instagram", icon: Instagram },
+    { url: social.youtube, label: "YouTube", icon: Youtube },
+    { url: social.twitter, label: "X (Twitter)", icon: Twitter },
+  ].filter((s) => s.url);
+
   return (
     <header className="sticky top-0 z-50">
       {/* Top bar */}
@@ -75,27 +85,18 @@ const SiteHeader = () => {
             {today}
           </span>
           <div className="flex items-center gap-3">
-            <a
-              href="#"
-              aria-label="Facebook"
-              className="opacity-70 transition-opacity hover:opacity-100"
-            >
-              <Facebook size={16} />
-            </a>
-            <a
-              href="#"
-              aria-label="Instagram"
-              className="opacity-70 transition-opacity hover:opacity-100"
-            >
-              <Instagram size={16} />
-            </a>
-            <a
-              href="#"
-              aria-label="YouTube"
-              className="opacity-70 transition-opacity hover:opacity-100"
-            >
-              <Youtube size={16} />
-            </a>
+            {socialLinks.map(({ url, label, icon: Icon }) => (
+              <a
+                key={label}
+                href={url}
+                target="_blank"
+                rel="noopener noreferrer"
+                aria-label={label}
+                className="opacity-70 transition-opacity hover:opacity-100"
+              >
+                <Icon size={16} />
+              </a>
+            ))}
           </div>
         </div>
       </div>

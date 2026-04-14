@@ -37,7 +37,8 @@ const CategoryPage = () => {
 
       setCategoryName(cat.name);
       setCategoryColor(cat.color);
-      document.title = `${cat.name} | O Catarinão`;
+      const storedName = (() => { try { const s = localStorage.getItem("site_settings_general"); return s ? JSON.parse(s).site_name : null; } catch { return null; } })();
+      document.title = `${cat.name} | ${storedName || "O Catarinão"}`;
 
       // Also get subcategory IDs
       const { data: subcats } = await supabase
